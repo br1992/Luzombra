@@ -1,12 +1,14 @@
 package com.github.br1992.geometry
 
 import java.awt.Color
+import org.apache.commons.math3.distribution.UniformRealDistribution
 import org.jetbrains.kotlinx.multik.api.d1array
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.ndarray.data.D1Array
 import org.jetbrains.kotlinx.multik.ndarray.data.get
 import org.jetbrains.kotlinx.multik.ndarray.operations.div
 import org.jetbrains.kotlinx.multik.ndarray.operations.map
+import org.jetbrains.kotlinx.multik.ndarray.operations.minus
 import org.jetbrains.kotlinx.multik.ndarray.operations.plus
 import org.jetbrains.kotlinx.multik.ndarray.operations.sum
 import org.jetbrains.kotlinx.multik.ndarray.operations.times
@@ -23,7 +25,15 @@ fun unit3(vec: Vec3): Vec3 {
     return vec.div(vec.length())
 }
 
-fun rayColor(ray: Ray3): RGB {
+fun rayColor(ray: Ray3, world: Intersectable, maxDepth: Int): RGB {
+    if (maxDepth <= 0) return rgb(0.0, 0.0, 0.0)
+
+    val intersection = world.intersects(ray, 0.001, Double.POSITIVE_INFINITY)
+    if (intersection is SurfaceIntersection) {
+        val target = intersection.point + intersection.normal + randomUnitVec3InSphere();
+        return 0.5 * rayColor(Ray3(intersection.point, target - intersection.point), world, maxDepth - 1);
+    }
+
     val unitDirection = unit3(ray.direction)
     val t = 0.5*(unitDirection.y() + 1.0)
     return rgb(1.0, 1.0, 1.0) * (1.0-t) + rgb(0.5, 0.7, 1.0) * t
@@ -32,12 +42,39 @@ fun rayColor(ray: Ray3): RGB {
 fun pos3(x: Double, y: Double, z: Double): Pos3 = vec3(x, y, z)
 fun rgb(r: Double, g: Double, b: Double): RGB = vec3(r, g, b)
 
+fun randomVec3(min: Double, max: Double): Vec3 {
+    val rgn = UniformRealDistribution(min, max)
+
+    return vec3(rgn.sample(), rgn.sample(), rgn.sample())
+}
+
+fun randomVec3InUnitSphere(): Vec3 {
+    var randomVector: Vec3?
+    do {
+        randomVector = randomVec3(-1.0, 1.0)
+    } while (randomVector!!.lengthSquared() >= 1.0)
+
+    return randomVector
+}
+
+fun randomUnitVec3InSphere(): Vec3 {
+    return randomVec3InUnitSphere().unitVector()
+}
+
 fun RGB.toAWT(): Color {
-    return Color(this.x().toFloat(), this.y().toFloat(), this.z().toFloat(), 1F)
+    return Color(this.x().toFloat().coerceIn(0F, 1F), this.y().toFloat().coerceIn(0F, 1F), this.z().toFloat().coerceIn(0F, 1F))
+}
+
+fun Vec3.unitVector(): Vec3 {
+    return this / this.length()
+}
+
+fun Vec3.lengthSquared(): Double {
+    return this.map { it * it }.sum()
 }
 
 fun Vec3.length(): Double {
-    return sqrt(this.map { it * it }.sum())
+    return sqrt(this.lengthSquared())
 }
 
 fun Vec3.x(): Double {
