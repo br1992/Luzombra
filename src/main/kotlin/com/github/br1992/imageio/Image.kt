@@ -6,6 +6,8 @@ import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.pixels.Pixel
 import java.io.File
+import java.lang.Integer.max
+import java.lang.Integer.min
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
@@ -16,46 +18,92 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.jetbrains.kotlinx.multik.ndarray.operations.div
 import org.jetbrains.kotlinx.multik.ndarray.operations.map
 import org.jetbrains.kotlinx.multik.ndarray.operations.times
+import kotlin.math.ceil
 import kotlin.math.nextDown
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
+import kotlin.streams.asStream
 
-fun image(width: Int, height: Int, block: (Int, Int) -> RGB): ImmutableImage {
-//    val image = ImmutableImage.create(width, height)
-//
-//    return image.map { pixel ->
-//        block(pixel.x, pixel.y).toAWT()
+fun image(width: Int, height: Int, executor: ExecutorService, block: (Int, Int) -> RGB): ImmutableImage {
+//    val pixelIndices = 0.until(height).flatMap { v ->
+//        0.until(width).map { u ->
+//            u to v
+//        }
 //    }
+//
+//    val pixelFutures = pixelIndices.map { (u, v) ->
+//        executor.submit<Pixel> {
+//            if (u == 1) {
+//                println("Processing Pixel row $v")
+//            }
+//            val color = block(u, v).toAWT()
+//            Pixel(u, v, color.red, color.green, color.blue, color.alpha)
+//        }
+//    }
+//
+//    val pixels = pixelFutures.map { it.get() }.sortedWith(PixelComparator()).toTypedArray()
 
-    val executor = ForkJoinPool(8)
+    println("$width, $height")
 
-    val pixelIndices = 0.until(height).flatMap { v ->
-        0.until(width).map { u ->
-            u to v
+    val fragments = buildList<RenderFragment> {
+        var uStartIndex = 0
+
+        while (uStartIndex < width) {
+            val uNext = uStartIndex + fragmentWidth
+            var vStartIndex = 0
+
+            while (vStartIndex < height) {
+                println("($uStartIndex, $vStartIndex)")
+                val vNext = vStartIndex + fragmentHeight
+
+                add(RenderFragment(
+                    uStartIndex.rangeTo(min(uNext - 1, width - 1)),
+                    vStartIndex.rangeTo(min(vNext - 1, height - 1))
+                ))
+
+                vStartIndex = vNext
+            }
+
+            uStartIndex = uNext
         }
     }
 
-    val pixels = runBlocking(executor.asCoroutineDispatcher()) {
-        pixelIndices.asFlow().flatMapMerge(8) { (u, v) ->
-            if (u == 1) {
-                println("Processing Pixel row $v")
+    val pixels = fragments.map { fragment ->
+        executor.submit<List<Pixel>> {
+            fragment.render(block)
+        }
+    }.flatMap { it.get() }.sortedWith(PixelComparator()).toTypedArray()
+
+    return ImmutableImage.create(width, height, pixels)
+}
+
+const val fragmentHeight = 32
+const val fragmentWidth = 32
+
+data class RenderFragment(val uRange: IntRange, val vRange: IntRange) {
+
+    fun render(block: (Int, Int) -> RGB): List<Pixel> {
+        println("Starting Fragment (${uRange.first},${vRange.first})->(${uRange.last},${vRange.last})")
+        return uRange.flatMap { u ->
+            vRange.map { v ->
+                val color = block(u, v).toAWT()
+                Pixel(u, v, color.red, color.green, color.blue, color.alpha)
             }
-            val color = block(u, v).toAWT()
-            flowOf(Pixel(u, v, color.red, color.green, color.blue, color.alpha))
-        }.toList().sortedWith(PixelComparator()).toTypedArray()
+        }
     }
 
-    executor.awaitTermination(15L, TimeUnit.SECONDS)
-//
-    return ImmutableImage.create(width, height, pixels)
 }
 
 class PixelComparator: Comparator<Pixel> {

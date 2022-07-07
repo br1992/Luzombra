@@ -3,6 +3,7 @@ package com.github.br1992.geometry
 import java.awt.Color
 import org.apache.commons.math3.distribution.UniformRealDistribution
 import org.jetbrains.kotlinx.multik.api.d1array
+import org.jetbrains.kotlinx.multik.api.linalg.dot
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.ndarray.data.D1Array
 import org.jetbrains.kotlinx.multik.ndarray.data.get
@@ -12,6 +13,7 @@ import org.jetbrains.kotlinx.multik.ndarray.operations.minus
 import org.jetbrains.kotlinx.multik.ndarray.operations.plus
 import org.jetbrains.kotlinx.multik.ndarray.operations.sum
 import org.jetbrains.kotlinx.multik.ndarray.operations.times
+import org.jetbrains.kotlinx.multik.ndarray.operations.unaryMinus
 import kotlin.math.sqrt
 
 fun vec3(x: Double, y: Double, z: Double): Vec3 {
@@ -30,7 +32,7 @@ fun rayColor(ray: Ray3, world: Intersectable, maxDepth: Int): RGB {
 
     val intersection = world.intersects(ray, 0.001, Double.POSITIVE_INFINITY)
     if (intersection is SurfaceIntersection) {
-        val target = intersection.point + intersection.normal + randomUnitVec3InSphere();
+        val target = intersection.point + randomUnitVec3InHemisphere(intersection.normal);
         return 0.5 * rayColor(Ray3(intersection.point, target - intersection.point), world, maxDepth - 1);
     }
 
@@ -59,6 +61,15 @@ fun randomVec3InUnitSphere(): Vec3 {
 
 fun randomUnitVec3InSphere(): Vec3 {
     return randomVec3InUnitSphere().unitVector()
+}
+
+fun randomUnitVec3InHemisphere(normal: Vec3): Vec3 {
+    val randomVec3InSphere = randomUnitVec3InSphere()
+    return if (randomVec3InSphere dot normal > 0.0) {
+        randomVec3InSphere
+    } else {
+        - randomVec3InSphere
+    }
 }
 
 fun RGB.toAWT(): Color {

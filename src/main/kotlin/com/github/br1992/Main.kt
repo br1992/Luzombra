@@ -22,17 +22,22 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.Executors
+import java.util.concurrent.Executors.newFixedThreadPool
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import org.apache.commons.math3.distribution.UniformRealDistribution
 import org.apache.commons.math3.fraction.Fraction
 import org.jetbrains.kotlinx.multik.api.JvmEngineType
+import org.jetbrains.kotlinx.multik.api.NativeEngineType
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.ndarray.operations.div
 import org.jetbrains.kotlinx.multik.ndarray.operations.minus
 import org.jetbrains.kotlinx.multik.ndarray.operations.plus
 import org.jetbrains.kotlinx.multik.ndarray.operations.times
 import org.springframework.context.annotation.ComponentScan
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 abstract class Renderer : CliktCommand()
 
@@ -41,6 +46,7 @@ class TestImage : CliktCommand(name = "test-image") {
 //    val height by option().int().default(256)
     val outputFile: File by option().file().default(Files.createFile(Path.of("/Users/brivera/projects/luzombra/target/image.png")).toFile())
 
+    @OptIn(ExperimentalTime::class)
     override fun run() {
         mk.setEngine(JvmEngineType)
 
@@ -57,19 +63,23 @@ class TestImage : CliktCommand(name = "test-image") {
             Sphere(pos3(0.0,-100.5,-1.0), 100.0)
         ))
 
-//        val executor = Executors.newFixedThreadPool(8)
+        val executor = newFixedThreadPool(8)
 
-        val image = image(width, height) { x, y ->
-            var pixelColor = rgb(0.0, 0.0, 0.0)
-            repeat(samplesPerPixel) {
-                val u = (x.toDouble() + randomUnitGenerator.sample()) / (width-1)
-                val v = (y.toDouble() + randomUnitGenerator.sample()) / (height-1)
-                val ray = camera.rayThroughPixel(u, v)
-                pixelColor += rayColor(ray, world, 50)
+        val image = measureTimedValue {
+            image(width, height, executor) { x, y ->
+                var pixelColor = rgb(0.0, 0.0, 0.0)
+                repeat(samplesPerPixel) {
+                    val u = (x.toDouble() + randomUnitGenerator.sample()) / (width-1)
+                    val v = (y.toDouble() + randomUnitGenerator.sample()) / (height-1)
+                    val ray = camera.rayThroughPixel(u, v)
+                    pixelColor += rayColor(ray, world, 50)
+                }
+                pixelColor.normalizeColor(samplesPerPixel)
             }
-            pixelColor.normalizeColor(samplesPerPixel)
         }
-        writeToFile(image, outputFile)
+        println("${mk.engine} to ${image.duration} to render image")
+        writeToFile(image.value, outputFile)
+        executor.awaitTermination(1L, TimeUnit.SECONDS)
     }
 
 }
