@@ -7,34 +7,24 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.br1992.geometry.IntersectableList
-import com.github.br1992.geometry.Pos3
-import com.github.br1992.geometry.RGB
 import com.github.br1992.imageio.image
 import com.github.br1992.imageio.writeToFile
-import com.github.br1992.geometry.Ray3
 import com.github.br1992.geometry.Sphere
 import com.github.br1992.geometry.pos3
 import com.github.br1992.geometry.rayColor
 import com.github.br1992.geometry.rgb
-import com.github.br1992.geometry.vec3
 import com.github.br1992.imageio.normalizeColor
+import com.github.br1992.material.Lambertian
+import com.github.br1992.material.Metal
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.Executors
 import java.util.concurrent.Executors.newFixedThreadPool
-import java.util.concurrent.ForkJoinPool
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 import org.apache.commons.math3.distribution.UniformRealDistribution
 import org.apache.commons.math3.fraction.Fraction
 import org.jetbrains.kotlinx.multik.api.JvmEngineType
-import org.jetbrains.kotlinx.multik.api.NativeEngineType
 import org.jetbrains.kotlinx.multik.api.mk
-import org.jetbrains.kotlinx.multik.ndarray.operations.div
-import org.jetbrains.kotlinx.multik.ndarray.operations.minus
 import org.jetbrains.kotlinx.multik.ndarray.operations.plus
-import org.jetbrains.kotlinx.multik.ndarray.operations.times
 import org.springframework.context.annotation.ComponentScan
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
@@ -58,9 +48,16 @@ class TestImage : CliktCommand(name = "test-image") {
 
         val camera = Camera(Fraction(16, 9), 2.0, 1.0)
 
+        val materialGround = Lambertian(rgb(0.8, 0.8, 0.0))
+        val materialCenter = Lambertian(rgb(0.7, 0.3, 0.3))
+        val materialLeft = Metal(rgb(0.8, 0.8, 0.8), 0.3)
+        val materialRight = Metal(rgb(0.8, 0.6, 0.2), 1.0)
+
         val world = IntersectableList(listOf(
-            Sphere(pos3(0.0 ,0.0,-1.0), 0.5),
-            Sphere(pos3(0.0,-100.5,-1.0), 100.0)
+            Sphere(pos3(0.0, -100.5, -1.0), 100.0, materialGround),
+            Sphere(pos3(0.0,0.0,-1.0),   0.5, materialCenter),
+            Sphere(pos3(-1.0,    0.0, -1.0),   0.5, materialLeft),
+            Sphere(pos3(1.0,    0.0, -1.0),   0.5, materialRight)
         ))
 
         val executor = newFixedThreadPool(8)
@@ -79,7 +76,6 @@ class TestImage : CliktCommand(name = "test-image") {
         }
         println("${mk.engine} to ${image.duration} to render image")
         writeToFile(image.value, outputFile)
-        executor.awaitTermination(1L, TimeUnit.SECONDS)
     }
 
 }

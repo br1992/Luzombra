@@ -28,12 +28,17 @@ fun unit3(vec: Vec3): Vec3 {
 }
 
 fun rayColor(ray: Ray3, world: Intersectable, maxDepth: Int): RGB {
-    if (maxDepth <= 0) return rgb(0.0, 0.0, 0.0)
+    if (maxDepth <= 0) return black
 
     val intersection = world.intersects(ray, 0.001, Double.POSITIVE_INFINITY)
     if (intersection is SurfaceIntersection) {
-        val target = intersection.point + randomUnitVec3InHemisphere(intersection.normal);
-        return 0.5 * rayColor(Ray3(intersection.point, target - intersection.point), world, maxDepth - 1);
+        val scatterResponse = intersection.material.scatter(ray, intersection)
+
+        return if (scatterResponse != null) {
+            return scatterResponse.attenuation * rayColor(scatterResponse.ray, world, maxDepth - 1);
+        } else {
+            black
+        }
     }
 
     val unitDirection = unit3(ray.direction)
@@ -43,6 +48,8 @@ fun rayColor(ray: Ray3, world: Intersectable, maxDepth: Int): RGB {
 
 fun pos3(x: Double, y: Double, z: Double): Pos3 = vec3(x, y, z)
 fun rgb(r: Double, g: Double, b: Double): RGB = vec3(r, g, b)
+
+val black = rgb(0.0, 0.0, 0.0)
 
 fun randomVec3(min: Double, max: Double): Vec3 {
     val rgn = UniformRealDistribution(min, max)
@@ -70,6 +77,10 @@ fun randomUnitVec3InHemisphere(normal: Vec3): Vec3 {
     } else {
         - randomVec3InSphere
     }
+}
+
+fun reflect(inward: Vec3, normal: Vec3): Vec3 {
+    return inward - 2 * (inward dot normal) * normal
 }
 
 fun RGB.toAWT(): Color {
