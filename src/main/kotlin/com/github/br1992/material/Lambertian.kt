@@ -19,5 +19,4 @@ class Lambertian(private val color: RGB) : Material {
             color
         )
     }
-
 }

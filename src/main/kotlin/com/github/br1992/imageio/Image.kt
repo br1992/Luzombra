@@ -5,36 +5,14 @@ import com.github.br1992.geometry.toAWT
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.pixels.Pixel
-import java.io.File
-import java.lang.Integer.max
-import java.lang.Integer.min
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executor
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.ForkJoinPool
-import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flatMapMerge
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.yield
 import org.jetbrains.kotlinx.multik.ndarray.operations.div
 import org.jetbrains.kotlinx.multik.ndarray.operations.map
 import org.jetbrains.kotlinx.multik.ndarray.operations.times
-import kotlin.math.ceil
-import kotlin.math.nextDown
-import kotlin.math.roundToInt
+import java.io.File
+import java.lang.Integer.min
+import java.util.concurrent.ExecutorService
 import kotlin.math.sqrt
-import kotlin.streams.asStream
 
 fun image(width: Int, height: Int, executor: ExecutorService, block: (Int, Int) -> RGB): ImmutableImage {
 //    val pixelIndices = 0.until(height).flatMap { v ->
@@ -68,10 +46,12 @@ fun image(width: Int, height: Int, executor: ExecutorService, block: (Int, Int) 
                 println("($uStartIndex, $vStartIndex)")
                 val vNext = vStartIndex + fragmentHeight
 
-                add(RenderFragment(
-                    uStartIndex.rangeTo(min(uNext - 1, width - 1)),
-                    vStartIndex.rangeTo(min(vNext - 1, height - 1))
-                ))
+                add(
+                    RenderFragment(
+                        uStartIndex.rangeTo(min(uNext - 1, width - 1)),
+                        vStartIndex.rangeTo(min(vNext - 1, height - 1))
+                    )
+                )
 
                 vStartIndex = vNext
             }
@@ -103,10 +83,9 @@ data class RenderFragment(val uRange: IntRange, val vRange: IntRange) {
             }
         }
     }
-
 }
 
-class PixelComparator: Comparator<Pixel> {
+class PixelComparator : Comparator<Pixel> {
     override fun compare(o1: Pixel, o2: Pixel): Int {
         return if (o1.y == o2.y) {
             o1.x - o2.x
@@ -116,7 +95,6 @@ class PixelComparator: Comparator<Pixel> {
             -1
         }
     }
-
 }
 
 fun writeToFile(image: ImmutableImage, file: File) {

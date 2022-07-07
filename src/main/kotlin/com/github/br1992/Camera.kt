@@ -1,7 +1,6 @@
 package com.github.br1992
 
 import com.github.br1992.geometry.Ray3
-import com.github.br1992.geometry.pos3
 import com.github.br1992.geometry.vec3
 import org.apache.commons.math3.fraction.Fraction
 import org.jetbrains.kotlinx.multik.ndarray.operations.div
@@ -20,5 +19,4 @@ class Camera(private val aspectRatio: Fraction, private val viewportHeight: Doub
     fun rayThroughPixel(u: Double, v: Double): Ray3 {
         return Ray3(origin, upperLeftCorner + horizontal * u - vertical * v - origin)
     }
-
 }

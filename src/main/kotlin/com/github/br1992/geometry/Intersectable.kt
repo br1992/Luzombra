@@ -22,7 +22,7 @@ data class SurfaceIntersection(
 
 fun determineNormalOrientation(ray: Ray3, outwardNormal: Vec3): Pair<Boolean, Vec3> {
     val frontFace = mk.linalg.dot(ray.direction, outwardNormal) < 0
-    val normal =  if (frontFace)  outwardNormal  else outwardNormal.unaryMinus()
+    val normal = if (frontFace) outwardNormal else outwardNormal.unaryMinus()
 
     return frontFace to normal
 }

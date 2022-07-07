@@ -1,7 +1,6 @@
 package com.github.br1992.geometry
 
 import io.kotest.core.spec.style.FreeSpec
-import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 class SphereTest : FreeSpec() {
@@ -44,5 +43,4 @@ class SphereTest : FreeSpec() {
             }
         }
     }
-
 }

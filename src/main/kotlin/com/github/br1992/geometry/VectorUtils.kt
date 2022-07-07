@@ -1,6 +1,5 @@
 package com.github.br1992.geometry
 
-import java.awt.Color
 import org.apache.commons.math3.distribution.UniformRealDistribution
 import org.jetbrains.kotlinx.multik.api.d1array
 import org.jetbrains.kotlinx.multik.api.linalg.dot
@@ -14,6 +13,7 @@ import org.jetbrains.kotlinx.multik.ndarray.operations.plus
 import org.jetbrains.kotlinx.multik.ndarray.operations.sum
 import org.jetbrains.kotlinx.multik.ndarray.operations.times
 import org.jetbrains.kotlinx.multik.ndarray.operations.unaryMinus
+import java.awt.Color
 import kotlin.math.sqrt
 
 fun vec3(x: Double, y: Double, z: Double): Vec3 {
@@ -35,15 +35,15 @@ fun rayColor(ray: Ray3, world: Intersectable, maxDepth: Int): RGB {
         val scatterResponse = intersection.material.scatter(ray, intersection)
 
         return if (scatterResponse != null) {
-            return scatterResponse.attenuation * rayColor(scatterResponse.ray, world, maxDepth - 1);
+            return scatterResponse.attenuation * rayColor(scatterResponse.ray, world, maxDepth - 1)
         } else {
             black
         }
     }
 
     val unitDirection = unit3(ray.direction)
-    val t = 0.5*(unitDirection.y() + 1.0)
-    return rgb(1.0, 1.0, 1.0) * (1.0-t) + rgb(0.5, 0.7, 1.0) * t
+    val t = 0.5 * (unitDirection.y() + 1.0)
+    return rgb(1.0, 1.0, 1.0) * (1.0 - t) + rgb(0.5, 0.7, 1.0) * t
 }
 
 fun pos3(x: Double, y: Double, z: Double): Pos3 = vec3(x, y, z)

@@ -21,5 +21,4 @@ class Metal(private val color: RGB, fuzziness: Double = 0.0) : Material {
             color
         ).takeIf { reflected dot intersection.normal > 0 }
     }
-
 }

@@ -1,6 +1,6 @@
 package com.github.br1992.geometry
 
-data class IntersectableList(val intersectables: List<Intersectable>): Intersectable {
+data class IntersectableList(val intersectables: List<Intersectable>) : Intersectable {
     override fun intersects(ray: Ray3, tMin: Double, tMax: Double): Intersection {
         var closestTDistance = tMax
         var intersection: Intersection = NoIntersection
@@ -15,5 +15,4 @@ data class IntersectableList(val intersectables: List<Intersectable>): Intersect
 
         return intersection
     }
-
 }
