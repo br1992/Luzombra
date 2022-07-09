@@ -2,7 +2,6 @@ package com.github.br1992.geometry
 
 import com.github.br1992.material.Material
 import org.jetbrains.kotlinx.multik.api.linalg.dot
-import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.ndarray.operations.unaryMinus
 
 interface Intersectable {
@@ -21,7 +20,7 @@ data class SurfaceIntersection(
 ) : Intersection
 
 fun determineNormalOrientation(ray: Ray3, outwardNormal: Vec3): Pair<Boolean, Vec3> {
-    val frontFace = mk.linalg.dot(ray.direction, outwardNormal) < 0
+    val frontFace = (ray.direction dot outwardNormal) < 0
     val normal = if (frontFace) outwardNormal else outwardNormal.unaryMinus()
 
     return frontFace to normal

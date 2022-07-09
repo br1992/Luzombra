@@ -14,6 +14,8 @@ import org.jetbrains.kotlinx.multik.ndarray.operations.sum
 import org.jetbrains.kotlinx.multik.ndarray.operations.times
 import org.jetbrains.kotlinx.multik.ndarray.operations.unaryMinus
 import java.awt.Color
+import kotlin.math.abs
+import kotlin.math.min
 import kotlin.math.sqrt
 
 fun vec3(x: Double, y: Double, z: Double): Vec3 {
@@ -81,6 +83,14 @@ fun randomUnitVec3InHemisphere(normal: Vec3): Vec3 {
 
 fun reflect(inward: Vec3, normal: Vec3): Vec3 {
     return inward - 2 * (inward dot normal) * normal
+}
+
+fun refract(inward: Vec3, normal: Vec3, refractionRatio: Double): Vec3 {
+    val cosTheta = min(-inward dot normal, 1.0)
+    val vecPerpendicularToNormal = refractionRatio * (inward + cosTheta * normal)
+    val vecParallelToNormal = -sqrt(abs(1.0 - vecPerpendicularToNormal.lengthSquared())) * normal
+
+    return vecPerpendicularToNormal + vecParallelToNormal
 }
 
 fun RGB.toAWT(): Color {

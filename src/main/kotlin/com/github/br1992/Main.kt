@@ -14,6 +14,7 @@ import com.github.br1992.geometry.rgb
 import com.github.br1992.imageio.image
 import com.github.br1992.imageio.normalizeColor
 import com.github.br1992.imageio.writeToFile
+import com.github.br1992.material.Dielectric
 import com.github.br1992.material.Lambertian
 import com.github.br1992.material.Metal
 import org.apache.commons.math3.distribution.UniformRealDistribution
@@ -49,15 +50,16 @@ class TestImage : CliktCommand(name = "test-image") {
         val camera = Camera(Fraction(16, 9), 2.0, 1.0)
 
         val materialGround = Lambertian(rgb(0.8, 0.8, 0.0))
-        val materialCenter = Lambertian(rgb(0.7, 0.3, 0.3))
-        val materialLeft = Metal(rgb(0.8, 0.8, 0.8), 0.3)
-        val materialRight = Metal(rgb(0.8, 0.6, 0.2), 1.0)
+        val materialCenter = Lambertian(rgb(0.1, 0.2, 0.5))
+        val materialLeft = Dielectric(1.5)
+        val materialRight = Metal(rgb(0.8, 0.6, 0.2), 0.0)
 
         val world = IntersectableList(
             listOf(
                 Sphere(pos3(0.0, -100.5, -1.0), 100.0, materialGround),
                 Sphere(pos3(0.0, 0.0, -1.0), 0.5, materialCenter),
                 Sphere(pos3(-1.0, 0.0, -1.0), 0.5, materialLeft),
+                Sphere(pos3(-1.0, 0.0, -1.0), -0.4, materialLeft),
                 Sphere(pos3(1.0, 0.0, -1.0), 0.5, materialRight)
             )
         )
